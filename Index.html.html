@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Maiine Inner G</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cream: #f5f0e8; --warm-white: #faf7f2;
+  --terracotta: #c4704a; --terracotta-light: #d98b68; --terracotta-pale: #f0e0d5;
+  --espresso: #2c1f14; --espresso-mid: #4a3526;
+  --taupe: #9e8e7e; --sage: #8a9e8a; --sand: #c8b89a; --sand-light: #e8ddd0;
+  --ai-color: #7a8fa6; --gym-color: #a0856e; --nav-h: 72px;
+}
+html,body { height:100%; font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--espresso); overflow:hidden; }
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+.app { display:flex; flex-direction:column; height:100vh; height:100dvh; }
+
+/* TOP BAR */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 12px; background:var(--warm-white); border-bottom:1px solid var(--sand-light); flex-shrink:0; }
+.topbar-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; }
+.topbar-title span { color:var(--terracotta); font-style:italic; }
+.topbar-right { text-align:right; }
+.topbar-date { font-size:11px; color:var(--taupe); font-family:'Cormorant Garamond',serif; font-style:italic; }
+.topbar-day { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; color:var(--espresso); line-height:1; }
+
+/* SCROLL */
+.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding-bottom:calc(var(--nav-h) + 16px); }
+
+/* BOTTOM NAV */
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; height:var(--nav-h); background:var(--espresso); display:flex; align-items:stretch; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
+.nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; border:none; background:transparent; color:var(--taupe); transition:color 0.2s; padding:8px 2px; font-family:'DM Sans',sans-serif; }
+.nav-btn.active { color:var(--terracotta-light); }
+.nav-icon { font-size:19px; line-height:1; }
+.nav-label { font-size:9px; letter-spacing:1px; text-transform:uppercase; font-weight:500; }
+
+/* PAGES */
+.page { display:none; }
+.page.active { display:block; animation:fadeUp 0.28s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* SHARED */
+.section { padding:16px 16px 0; }
+.section:last-child { padding-bottom:16px; }
+.card { background:var(--warm-white); border-radius:16px; padding:18px; margin-bottom:10px; position:relative; overflow:hidden; }
+.card-accent { position:absolute; top:0; left:0; right:0; height:3px; }
+.acc-terra{background:var(--terracotta)} .acc-sage{background:var(--sage)} .acc-blue{background:var(--ai-color)} .acc-gym{background:var(--gym-color)} .acc-sand{background:var(--sand)}
+.card-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--taupe); margin-bottom:10px; font-weight:600; display:flex; align-items:center; gap:6px; }
+.clabel-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.card-title { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:400; margin-bottom:12px; line-height:1.1; }
+
+/* CHECKLIST */
+.checklist { list-style:none; }
+.checklist li { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:13.5px; line-height:1.4; cursor:pointer; transition:opacity 0.2s; }
+.checklist li:last-child { border-bottom:none; }
+.checklist li.done { opacity:.35; text-decoration:line-through; }
+.chk { width:17px; height:17px; border-radius:5px; border:1.5px solid var(--sand); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:10px; transition:all 0.2s; }
+.checklist li.done .chk { background:var(--terracotta); border-color:var(--terracotta); color:#fff; }
+
+/* PROGRESS */
+.prog-wrap { margin-bottom:12px; }
+.prog-label { display:flex; justify-content:space-between; font-size:12px; color:var(--espresso-mid); margin-bottom:5px; }
+.prog-label span:last-child { color:var(--taupe); }
+.prog-track { height:4px; background:var(--sand-light); border-radius:10px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:10px; transition:width 0.8s cubic-bezier(.4,0,.2,1); }
+.pf-terra{background:var(--terracotta)} .pf-sage{background:var(--sage)} .pf-blue{background:var(--ai-color)} .pf-gym{background:var(--gym-color)}
+
+/* HOME */
+.focus-hero { background:var(--espresso); border-radius:18px; padding:22px; margin:14px 16px 10px; position:relative; overflow:hidden; }
+.focus-hero::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:radial-gradient(circle,rgba(196,112,74,0.25) 0%,transparent 70%); }
+.focus-input { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; color:var(--terracotta-light); line-height:1.6; outline:none; min-height:36px; width:100%; }
+.focus-input:empty::before { content:attr(data-ph); opacity:.45; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 16px; margin-bottom:10px; }
+.stat-card { background:var(--warm-white); border-radius:14px; padding:14px 10px; text-align:center; }
+.stat-num { font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:300; color:var(--terracotta); line-height:1; }
+.stat-desc { font-size:10px; color:var(--taupe); margin-top:3px; line-height:1.3; }
+.energy-row { display:flex; gap:7px; flex-wrap:wrap; }
+.energy-btn { padding:8px 13px; border-radius:100px; border:1.5px solid var(--sand-light); background:transparent; font-family:'DM Sans',sans-serif; font-size:12px; cursor:pointer; transition:all 0.2s; color:var(--espresso); }
+.energy-btn.sel { background:var(--espresso); border-color:var(--espresso); color:var(--cream); }
+.brain-dump { width:100%; background:transparent; border:none; resize:none; font-family:'DM Sans',sans-serif; font-size:13.5px; color:var(--espresso); line-height:1.8; outline:none; min-height:90px; }
+.brain-dump::placeholder { color:var(--sand); font-style:italic; }
+
+/* HABITS */
+.habit-week-header { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:6px; }
+.hwh { text-align:center; font-size:9px; color:var(--taupe); letter-spacing:.5px; text-transform:uppercase; padding:3px 0; }
+.habit-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.habit-name { font-size:12px; width:105px; flex-shrink:0; line-height:1.3; }
+.habit-days { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; flex:1; }
+.hday { aspect-ratio:1; border-radius:5px; background:var(--sand-light); cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; font-size:9px; color:transparent; }
+.hday.done { background:var(--terracotta); color:#fff; }
+.hday.done::after { content:'✓'; }
+.streak-badge { display:inline-flex; align-items:center; gap:3px; background:var(--terracotta-pale); color:var(--terracotta); font-size:10px; padding:2px 8px; border-radius:100px; font-weight:600; margin-left:4px; }
+
+/* CONTENT CALENDAR */
+.cal-week { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:14px; }
+.cal-day { border-radius:10px; padding:7px 3px; text-align:center; cursor:pointer; border:1.5px solid transparent; transition:all 0.15s; min-height:58px; }
+.cal-day.today { border-color:var(--terracotta); }
+.cal-day.has-post { background:var(--warm-white); }
+.cal-day-name { font-size:8px; color:var(--taupe); letter-spacing:.5px; text-transform:uppercase; margin-bottom:3px; }
+.cal-day-num { font-family:'Cormorant Garamond',serif; font-size:17px; color:var(--espresso); line-height:1; margin-bottom:3px; }
+.cal-dot { width:5px; height:5px; border-radius:50%; margin:2px auto; }
+.platform-tag { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:100px; font-size:10px; font-weight:500; margin:2px 2px 2px 0; }
+.pt-tt{background:#fff0e8;color:#c4704a} .pt-yt{background:#fff0f0;color:#c0392b} .pt-ig{background:#f0eeff;color:#7c5cbf}
+.post-plan { border-left:3px solid var(--terracotta); padding:9px 12px; margin-bottom:9px; background:var(--warm-white); border-radius:0 10px 10px 0; }
+.post-plan-day { font-size:10px; color:var(--taupe); margin-bottom:3px; letter-spacing:.5px; text-transform:uppercase; }
+.post-plan-title { font-size:13.5px; font-weight:500; margin-bottom:5px; }
+.week-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.week-nav-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--sand-light); background:transparent; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+.week-nav-btn:hover { background:var(--espresso); color:var(--cream); border-color:var(--espresso); }
+.week-nav-label { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; }
+
+/* SHOP */
+.shop-cat { margin-bottom:18px; }
+.shop-cat-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--taupe); font-weight:600; padding:0 0 7px; border-bottom:1px solid var(--sand-light); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.shop-item { display:flex; align-items:center; gap:9px; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.04); font-size:13.5px; cursor:pointer; transition:opacity 0.2s; }
+.shop-item:last-child { border-bottom:none; }
+.shop-item.got { opacity:.32; text-decoration:line-through; }
+.shop-tag { margin-left:auto; font-size:9px; padding:2px 7px; border-radius:100px; background:var(--sand-light); color:var(--taupe); white-space:nowrap; }
+
+/* GYM */
+.lift-table { width:100%; border-collapse:collapse; }
+.lift-table th { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--taupe); font-weight:600; padding:5px 6px; text-align:left; border-bottom:1px solid var(--sand-light); }
+.lift-table td { padding:7px 6px; font-size:13px; border-bottom:1px solid rgba(0,0,0,0.04); vertical-align:middle; }
+.lift-table tr:last-child td { border-bottom:none; }
+.lift-input { width:62px; padding:5px 7px; border-radius:8px; border:1.5px solid var(--sand-light); background:var(--cream); font-family:'DM Sans',sans-serif; font-size:12px; color:var(--espresso); text-align:center; outline:none; transition:border-color 0.2s; }
+.lift-input:focus { border-color:var(--gym-color); }
+.day-tabs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:14px; }
+.day-tab { padding:6px 13px; border-radius:100px; border:1.5px solid var(--sand-light); background:transparent; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; color:var(--espresso-mid); }
+.day-tab.active { background:var(--espresso); border-color:var(--espresso); color:var(--cream); }
+.gym-log-entry { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.gym-log-date { font-size:11px; color:var(--taupe); min-width:65px; }
+.gym-log-val { font-size:13px; font-weight:500; }
+
+/* ADD ROW */
+.add-row { display:flex; gap:8px; margin-top:10px; }
+.add-input { flex:1; padding:9px 13px; border-radius:10px; border:1.5px solid var(--sand-light); background:var(--cream); font-family:'DM Sans',sans-serif; font-size:13px; color:var(--espresso); outline:none; transition:border-color 0.2s; }
+.add-input:focus { border-color:var(--terracotta); }
+.add-btn { padding:9px 16px; border-radius:10px; border:none; background:var(--terracotta); color:#fff; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:opacity 0.2s; }
+.add-btn:hover { opacity:.85; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Maiine <span>Inner G</span></div>
+    <div style="font-size:9px;color:var(--taupe);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Reset Season</div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-date" id="monthYear"></div>
+    <div class="topbar-day" id="dayNum"></div>
+  </div>
+</div>
+
+<div class="scroll-area">
+
+<!-- ═══ HOME ═══ -->
+<div class="page active" id="page-home">
+  <div class="focus-hero">
+    <div class="card-label" style="color:rgba(200,184,154,.7)"><span class="clabel-dot" style="background:var(--terracotta)"></span>Today's Intention</div>
+    <div class="card-title" style="color:var(--cream);font-size:22px;margin-bottom:8px;">What's the one thing?</div>
+    <div class="focus-input" contenteditable="true" data-ph="Type your focus for today…" id="focusInput"></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="daysToMove">8</div><div class="stat-desc">days to move-in</div></div>
+    <div class="stat-card"><div class="stat-num" id="streakStat">0</div><div class="stat-desc">best habit streak</div></div>
+    <div class="stat-card"><div class="stat-num" id="gymCount">0</div><div class="stat-desc">workouts logged</div></div>
+  </div>
+  <div class="section">
+    <div class="card">
+      <div class="card-accent acc-sand"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--sand)"></span>Energy Check-In</div>
+      <div class="energy-row">
+        <button class="energy-btn" onclick="pickEnergy(this)">🔥 On fire</button>
+        <button class="energy-btn" onclick="pickEnergy(this)">🌿 Steady</button>
+        <button class="energy-btn" onclick="pickEnergy(this)">🌫️ Foggy</button>
+        <button class="energy-btn" onclick="pickEnergy(this)">🌊 Reset needed</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-terra"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--terracotta)"></span>Today's Wins</div>
+      <ul class="checklist" id="todayList">
+        <li onclick="toggleChk(this)"><span class="chk"></span>Film / batch content</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>AI study session</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Gym / movement</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Apartment task</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Brain dump / journal</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-sand"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--sand)"></span>Brain Dump</div>
+      <textarea class="brain-dump" id="brainDump" placeholder="Get it out of your head — ideas, reminders, feelings…"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HABITS ═══ -->
+<div class="page" id="page-habits">
+  <div class="section">
+    <div class="card">
+      <div class="card-accent acc-terra"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--terracotta)"></span>Weekly Habit Tracker</div>
+      <div style="font-size:11px;color:var(--taupe);margin-bottom:14px;">Tap each day you completed it.</div>
+      <div class="habit-week-header">
+        <div class="hwh">Su</div><div class="hwh">M</div><div class="hwh">Tu</div><div class="hwh">W</div><div class="hwh">Th</div><div class="hwh">F</div><div class="hwh">Sa</div>
+      </div>
+      <div id="habitRows"></div>
+      <div class="add-row" style="margin-top:14px;">
+        <input class="add-input" id="newHabitInput" placeholder="Add a habit…" />
+        <button class="add-btn" onclick="addHabit()">+ Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-sage"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--sage)"></span>Move Milestones · <span id="moveDaysLabel">8</span> days</div>
+      <ul class="checklist" id="moveList">
+        <li onclick="toggleChk(this)"><span class="chk"></span>Confirm lease signing<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Mar 20</span></li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Order herringbone backsplash<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Mar 21</span></li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Source terracotta + neutral decor<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Mar 22</span></li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Pack non-essentials<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Mar 23</span></li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Matte black hardware swap<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Mar 25</span></li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Move-in day 🎉<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Mar 27</span></li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Style + film the new space<span style="margin-left:auto;font-size:10px;color:var(--taupe);">Apr 1</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-blue"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--ai-color)"></span>AI Syllabus · 8 Weeks</div>
+      <div class="day-tabs" id="weekTabs"></div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Progress</span><span id="aiPct">0%</span></div>
+        <div class="prog-track"><div class="prog-fill pf-blue" id="aiBar" style="width:0%"></div></div>
+      </div>
+      <ul class="checklist" id="aiList">
+        <li onclick="toggleChk(this)"><span class="chk"></span>Complete daily study session</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Document 1 key insight</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Practice prompt engineering</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Share a tip with someone in your circle</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONTENT ═══ -->
+<div class="page" id="page-content">
+  <div class="section">
+    <div class="card">
+      <div class="card-accent acc-terra"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--terracotta)"></span>Content Calendar</div>
+      <div class="week-nav">
+        <button class="week-nav-btn" onclick="shiftWeek(-1)">‹</button>
+        <div class="week-nav-label" id="calWeekLabel"></div>
+        <button class="week-nav-btn" onclick="shiftWeek(1)">›</button>
+      </div>
+      <div class="cal-week" id="calWeek"></div>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-terra"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--terracotta)"></span>This Week's Posts</div>
+      <div class="post-plan"><div class="post-plan-day">Monday</div><div class="post-plan-title">Reset Season Pt 1 — Before the Move</div><span class="platform-tag pt-tt">TikTok</span><span class="platform-tag pt-yt">YouTube</span></div>
+      <div class="post-plan"><div class="post-plan-day">Wednesday</div><div class="post-plan-title">Wellness Check-In + ACV Gummies</div><span class="platform-tag pt-tt">TikTok</span><span class="platform-tag pt-ig">Instagram</span></div>
+      <div class="post-plan"><div class="post-plan-day">Friday</div><div class="post-plan-title">Gym Progress Update</div><span class="platform-tag pt-ig">Instagram</span><span class="platform-tag pt-tt">TikTok</span></div>
+      <div class="post-plan"><div class="post-plan-day">Sunday</div><div class="post-plan-title">Move-In Vlog + New Space Reveal</div><span class="platform-tag pt-yt">YouTube</span><span class="platform-tag pt-ig">Instagram</span></div>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-terra"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--terracotta)"></span>Reset Season Series</div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Series Progress</span><span id="contentPct">0%</span></div>
+        <div class="prog-track"><div class="prog-fill pf-terra" id="contentBar" style="width:0%"></div></div>
+      </div>
+      <ul class="checklist" id="contentList">
+        <li onclick="toggleChk(this)"><span class="chk"></span>Film Part 1 — Before the move</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Film Part 2 — Move day vlog</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Film Part 3 — Settling in</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Edit + post TikTok short</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>YouTube full vlog upload</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>IG Reels cut</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Her Fantasy Box affiliate drop</li>
+        <li onclick="toggleChk(this)"><span class="chk"></span>Goli gummies integration</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHOP ═══ -->
+<div class="page" id="page-shop">
+  <div class="section">
+    <div class="card">
+      <div class="card-accent acc-sage"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--sage)"></span>Apartment Shopping List</div>
+      <div class="shop-cat">
+        <div class="shop-cat-title">Décor & Aesthetic <span style="font-size:9px;color:var(--sage);">Modern Organic</span></div>
+        <div id="shopDecor">
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Herringbone peel-and-stick backsplash<span class="shop-tag">Amazon</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Terracotta throw pillow set<span class="shop-tag">Target</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Neutral woven rug<span class="shop-tag">Marshalls</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Dried pampas grass<span class="shop-tag">Amazon</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Ceramic vases (warm tones)<span class="shop-tag">HomeGoods</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Linen curtains (cream/taupe)<span class="shop-tag">Amazon</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Wooden tray / catchall<span class="shop-tag">Marshalls</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-title">Hardware & Functional</div>
+        <div id="shopHardware">
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Matte black cabinet handles<span class="shop-tag">Amazon</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Command hooks (matte black)<span class="shop-tag">Walmart</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Shelf liner<span class="shop-tag">Dollar Tree</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>LED strip lights (warm white)<span class="shop-tag">Amazon</span></div>
+        </div>
+      </div>
+      <div class="shop-cat">
+        <div class="shop-cat-title">Kitchen & Bath</div>
+        <div id="shopKB">
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Matching canister set<span class="shop-tag">HomeGoods</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Dish drying rack (matte black)<span class="shop-tag">Amazon</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Bathroom organizer tray<span class="shop-tag">Dollar Tree</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Fluffy bath mat (neutral)<span class="shop-tag">Walmart</span></div>
+          <div class="shop-item" onclick="toggleShop(this)"><span class="chk"></span>Soap dispenser set<span class="shop-tag">Target</span></div>
+        </div>
+      </div>
+      <div class="add-row">
+        <input class="add-input" id="newShopInput" placeholder="Add item…" />
+        <button class="add-btn" onclick="addShopItem()">+ Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ GYM ═══ -->
+<div class="page" id="page-gym">
+  <div class="section">
+    <div class="card">
+      <div class="card-accent acc-gym"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--gym-color)"></span>Today's Split</div>
+      <div class="day-tabs" id="splitTabs">
+        <button class="day-tab active" onclick="showSplit(this,'push')">Push</button>
+        <button class="day-tab" onclick="showSplit(this,'pull')">Pull</button>
+        <button class="day-tab" onclick="showSplit(this,'legs')">Legs</button>
+        <button class="day-tab" onclick="showSplit(this,'cardio')">Cardio</button>
+        <button class="day-tab" onclick="showSplit(this,'rest')">Rest</button>
+      </div>
+      <div id="split-push">
+        <table class="lift-table"><thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight (lbs)</th></tr></thead><tbody>
+          <tr><td>Chest Press</td><td>3</td><td>10–12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'chest-press')" /></td></tr>
+          <tr><td>Incline DB Press</td><td>3</td><td>10</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'incline-db')" /></td></tr>
+          <tr><td>Shoulder Press</td><td>3</td><td>10–12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'shoulder-press')" /></td></tr>
+          <tr><td>Lateral Raises</td><td>3</td><td>15</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'lateral-raise')" /></td></tr>
+          <tr><td>Tricep Pushdown</td><td>3</td><td>12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'tri-push')" /></td></tr>
+        </tbody></table>
+      </div>
+      <div id="split-pull" style="display:none">
+        <table class="lift-table"><thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight (lbs)</th></tr></thead><tbody>
+          <tr><td>Lat Pulldown</td><td>3</td><td>10–12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'lat-pull')" /></td></tr>
+          <tr><td>Seated Row</td><td>3</td><td>10</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'seated-row')" /></td></tr>
+          <tr><td>Face Pulls</td><td>3</td><td>15</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'face-pull')" /></td></tr>
+          <tr><td>DB Curl</td><td>3</td><td>12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'db-curl')" /></td></tr>
+          <tr><td>Hammer Curl</td><td>3</td><td>12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'hammer-curl')" /></td></tr>
+        </tbody></table>
+      </div>
+      <div id="split-legs" style="display:none">
+        <table class="lift-table"><thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight (lbs)</th></tr></thead><tbody>
+          <tr><td>Squat</td><td>4</td><td>8–10</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'squat')" /></td></tr>
+          <tr><td>Romanian Deadlift</td><td>3</td><td>10</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'rdl')" /></td></tr>
+          <tr><td>Leg Press</td><td>3</td><td>12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'leg-press')" /></td></tr>
+          <tr><td>Hip Thrust</td><td>3</td><td>12</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'hip-thrust')" /></td></tr>
+          <tr><td>Calf Raise</td><td>4</td><td>15</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'calf-raise')" /></td></tr>
+        </tbody></table>
+      </div>
+      <div id="split-cardio" style="display:none">
+        <table class="lift-table"><thead><tr><th>Activity</th><th>Duration</th><th>Notes</th></tr></thead><tbody>
+          <tr><td>Incline Walk</td><td>30 min</td><td><input class="lift-input" style="width:80px" type="text" placeholder="speed…" /></td></tr>
+          <tr><td>Stairmaster</td><td>20 min</td><td><input class="lift-input" style="width:80px" type="text" placeholder="level…" /></td></tr>
+        </tbody></table>
+      </div>
+      <div id="split-rest" style="display:none">
+        <p style="font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;color:var(--taupe);padding:14px 0;line-height:1.6;">Rest is part of the work. Stretch, hydrate, recover. You're not falling off — you're building.</p>
+      </div>
+      <button class="add-btn" style="margin-top:14px;width:100%;border-radius:12px;padding:11px;" onclick="logWorkout()">Log Today's Workout ✓</button>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-gym"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--gym-color)"></span>Personal Records</div>
+      <table class="lift-table">
+        <thead><tr><th>Lift</th><th>Current PR (lbs)</th><th>Goal (lbs)</th></tr></thead>
+        <tbody>
+          <tr><td>Squat</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'pr-squat')" /></td><td><input class="lift-input" type="number" placeholder="—" /></td></tr>
+          <tr><td>Hip Thrust</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'pr-hipthrust')" /></td><td><input class="lift-input" type="number" placeholder="—" /></td></tr>
+          <tr><td>RDL</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'pr-rdl')" /></td><td><input class="lift-input" type="number" placeholder="—" /></td></tr>
+          <tr><td>Lat Pulldown</td><td><input class="lift-input" type="number" placeholder="—" oninput="saveLift(this,'pr-latpull')" /></td><td><input class="lift-input" type="number" placeholder="—" /></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-accent acc-gym"></div>
+      <div class="card-label"><span class="clabel-dot" style="background:var(--gym-color)"></span>Workout Log</div>
+      <div id="workoutLog" style="font-size:12px;color:var(--taupe);font-style:italic;">No workouts logged yet.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end scroll-area -->
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="goTo('home',this)"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+  <button class="nav-btn" onclick="goTo('habits',this)"><span class="nav-icon">🔥</span><span class="nav-label">Habits</span></button>
+  <button class="nav-btn" onclick="goTo('content',this)"><span class="nav-icon">🎬</span><span class="nav-label">Content</span></button>
+  <button class="nav-btn" onclick="goTo('shop',this)"><span class="nav-icon">🛒</span><span class="nav-label">Shopping</span></button>
+  <button class="nav-btn" onclick="goTo('gym',this)"><span class="nav-icon">💪</span><span class="nav-label">Gym</span></button>
+</nav>
+</div>
+
+<script>
+// DATE
+const now = new Date();
+document.getElementById('dayNum').textContent = now.getDate();
+document.getElementById('monthYear').textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+const moveDate = new Date('2026-03-27');
+const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+const daysLeft = Math.max(0,Math.round((moveDate-todayMid)/86400000));
+document.getElementById('daysToMove').textContent = daysLeft;
+const ml = document.getElementById('moveDaysLabel'); if(ml) ml.textContent = daysLeft;
+
+// NAV
+function goTo(page,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  btn.classList.add('active');
+  document.querySelector('.scroll-area').scrollTop=0;
+}
+
+// CHECKLIST
+function toggleChk(el){
+  el.classList.toggle('done');
+  const chk=el.querySelector('.chk'); if(chk) chk.textContent=el.classList.contains('done')?'✓':'';
+  updateProg('contentList','contentBar','contentPct');
+  updateProg('aiList','aiBar','aiPct');
+  saveAll();
+}
+function toggleShop(el){
+  el.classList.toggle('got');
+  const chk=el.querySelector('.chk'); if(chk) chk.textContent=el.classList.contains('got')?'✓':'';
+  saveAll();
+}
+function updateProg(lid,bid,pid){
+  const list=document.getElementById(lid); if(!list) return;
+  const items=list.querySelectorAll('li'), done=list.querySelectorAll('li.done').length;
+  const pct=Math.round((done/items.length)*100);
+  document.getElementById(bid).style.width=pct+'%';
+  document.getElementById(pid).textContent=pct+'%';
+}
+
+// ENERGY
+function pickEnergy(btn){
+  document.querySelectorAll('.energy-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel'); saveAll();
+}
+
+// HABITS
+const defaultHabits=['Morning routine','Drink 8 glasses water','Post / create content','AI study session','Gym / move body','No doom scroll before bed'];
+let habits=[];
+function buildHabits(){
+  try{ const s=localStorage.getItem('maiine_habits'); if(s) habits=JSON.parse(s); }catch(e){}
+  if(!habits.length) habits=defaultHabits.map(n=>({name:n,days:[0,0,0,0,0,0,0]}));
+  renderHabits();
+}
+function renderHabits(){
+  const c=document.getElementById('habitRows'); if(!c) return; c.innerHTML='';
+  habits.forEach((h,hi)=>{
+    const streak=calcStreak(h.days);
+    const row=document.createElement('div'); row.className='habit-row';
+    row.innerHTML=`<div class="habit-name">${h.name}${streak>1?`<span class="streak-badge">🔥${streak}</span>`:''}</div><div class="habit-days" id="hd-${hi}"></div>`;
+    c.appendChild(row);
+    const dc=document.getElementById('hd-'+hi);
+    for(let d=0;d<7;d++){
+      const cell=document.createElement('div');
+      cell.className='hday'+(h.days[d]?' done':'');
+      cell.onclick=()=>{ h.days[d]=h.days[d]?0:1; saveHabits(); renderHabits(); updateStreakStat(); };
+      dc.appendChild(cell);
+    }
+  });
+  updateStreakStat();
+}
+function calcStreak(days){ const t=new Date().getDay(); let s=0; for(let i=t;i>=0;i--){ if(days[i]) s++; else break; } return s; }
+function updateStreakStat(){ const m=Math.max(...habits.map(h=>calcStreak(h.days)),0); const el=document.getElementById('streakStat'); if(el) el.textContent=m; }
+function addHabit(){ const inp=document.getElementById('newHabitInput'); const n=inp.value.trim(); if(!n) return; habits.push({name:n,days:[0,0,0,0,0,0,0]}); saveHabits(); renderHabits(); inp.value=''; }
+function saveHabits(){ try{ localStorage.setItem('maiine_habits',JSON.stringify(habits)); }catch(e){} }
+
+// AI WEEK TABS
+const weekNames=['Foundation','Claude Deep Dive','Tool Compare','Applied','Expertise','Consulting','Build','Launch'];
+function buildWeekTabs(){
+  const c=document.getElementById('weekTabs'); if(!c) return; c.innerHTML='';
+  let saved=0; try{ saved=parseInt(localStorage.getItem('maiine_aiweek')||'0'); }catch(e){}
+  weekNames.forEach((n,i)=>{ const b=document.createElement('button'); b.className='day-tab'+(i===saved?' active':''); b.textContent='Wk '+(i+1); b.title=n; b.onclick=()=>setAIWeek(i); c.appendChild(b); });
+  setAIWeek(saved,false);
+}
+function setAIWeek(idx,save=true){
+  document.querySelectorAll('#weekTabs .day-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const pct=Math.round((idx/8)*100);
+  const bar=document.getElementById('aiBar'); if(bar) bar.style.width=pct+'%';
+  const lbl=document.getElementById('aiPct'); if(lbl) lbl.textContent=pct+'%';
+  if(save) try{ localStorage.setItem('maiine_aiweek',idx); }catch(e){}
+}
+
+// CALENDAR
+let calOffset=0;
+function buildCalendar(){
+  const label=document.getElementById('calWeekLabel'), grid=document.getElementById('calWeek'); if(!grid) return; grid.innerHTML='';
+  const base=new Date(); base.setHours(0,0,0,0);
+  const startOfWeek=new Date(base); startOfWeek.setDate(base.getDate()-base.getDay()+(calOffset*7));
+  const endOfWeek=new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate()+6);
+  const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  label.textContent=fmt(startOfWeek)+' – '+fmt(endOfWeek);
+  const postDays=[1,3,5,0]; const days=['S','M','T','W','T','F','S'];
+  for(let d=0;d<7;d++){
+    const date=new Date(startOfWeek); date.setDate(startOfWeek.getDate()+d);
+    const isToday=date.toDateString()===new Date().toDateString();
+    const hasPost=postDays.includes(d);
+    const cell=document.createElement('div');
+    cell.className='cal-day'+(isToday?' today':'')+(hasPost?' has-post':'');
+    cell.innerHTML=`<div class="cal-day-name">${days[d]}</div><div class="cal-day-num">${date.getDate()}</div>${hasPost?'<div class="cal-dot" style="background:var(--terracotta)"></div>':''}`;
+    grid.appendChild(cell);
+  }
+}
+function shiftWeek(dir){ calOffset+=dir; buildCalendar(); }
+
+// SHOP
+function addShopItem(){
+  const inp=document.getElementById('newShopInput'); const n=inp.value.trim(); if(!n) return;
+  const list=document.getElementById('shopDecor');
+  const item=document.createElement('div'); item.className='shop-item';
+  item.innerHTML=`<span class="chk"></span>${n}<span class="shop-tag">Custom</span>`;
+  item.onclick=()=>{ item.classList.toggle('got'); const chk=item.querySelector('.chk'); if(chk) chk.textContent=item.classList.contains('got')?'✓':''; saveAll(); };
+  list.appendChild(item); inp.value=''; saveAll();
+}
+
+// GYM
+function showSplit(btn,split){
+  document.querySelectorAll('#splitTabs .day-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  ['push','pull','legs','cardio','rest'].forEach(s=>{ const el=document.getElementById('split-'+s); if(el) el.style.display=s===split?'block':'none'; });
+}
+function saveLift(input,key){ try{ localStorage.setItem('maiine_lift_'+key,input.value); }catch(e){} }
+function logWorkout(){
+  const log=document.getElementById('workoutLog');
+  const split=document.querySelector('#splitTabs .day-tab.active')?.textContent||'Workout';
+  const entry=document.createElement('div'); entry.className='gym-log-entry';
+  entry.innerHTML=`<span class="gym-log-date">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span><span class="gym-log-val">✓ ${split} day</span>`;
+  if(log.style.fontStyle==='italic') log.innerHTML='';
+  log.style.fontStyle='normal'; log.prepend(entry);
+  try{
+    const logs=JSON.parse(localStorage.getItem('maiine_gymlog')||'[]');
+    logs.unshift({date:new Date().toISOString(),split});
+    localStorage.setItem('maiine_gymlog',JSON.stringify(logs.slice(0,30)));
+    document.getElementById('gymCount').textContent=logs.length;
+  }catch(e){}
+}
+function loadGymLog(){
+  try{
+    const logs=JSON.parse(localStorage.getItem('maiine_gymlog')||'[]'); if(!logs.length) return;
+    const log=document.getElementById('workoutLog'); log.innerHTML=''; log.style.fontStyle='normal';
+    logs.forEach(l=>{ const e=document.createElement('div'); e.className='gym-log-entry'; e.innerHTML=`<span class="gym-log-date">${new Date(l.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span><span class="gym-log-val">✓ ${l.split} day</span>`; log.appendChild(e); });
+    document.getElementById('gymCount').textContent=logs.length;
+  }catch(e){}
+}
+
+// FOCUS + BRAIN DUMP
+const fi=document.getElementById('focusInput');
+try{ fi.textContent=localStorage.getItem('maiine_focus')||''; }catch(e){}
+fi.addEventListener('input',()=>{ try{ localStorage.setItem('maiine_focus',fi.textContent); }catch(e){} });
+const bd=document.getElementById('brainDump');
+try{ bd.value=localStorage.getItem('maiine_brain')||''; }catch(e){}
+bd.addEventListener('input',()=>{ try{ localStorage.setItem('maiine_brain',bd.value); }catch(e){} });
+
+// SAVE / LOAD ALL
+function saveAll(){
+  try{
+    const state={
+      today:Array.from(document.querySelectorAll('#todayList li')).map(l=>l.classList.contains('done')),
+      content:Array.from(document.querySelectorAll('#contentList li')).map(l=>l.classList.contains('done')),
+      move:Array.from(document.querySelectorAll('#moveList li')).map(l=>l.classList.contains('done')),
+      ai:Array.from(document.querySelectorAll('#aiList li')).map(l=>l.classList.contains('done')),
+      shop:Array.from(document.querySelectorAll('.shop-item')).map(l=>l.classList.contains('got')),
+      energy:document.querySelector('.energy-btn.sel')?.textContent||'',
+    };
+    localStorage.setItem('maiine_dash',JSON.stringify(state));
+  }catch(e){}
+}
+function loadAll(){
+  try{
+    const raw=localStorage.getItem('maiine_dash'); if(!raw) return;
+    const s=JSON.parse(raw);
+    const applyList=(lid,arr,cls)=>{ const items=document.querySelectorAll('#'+lid+' li'); (arr||[]).forEach((d,i)=>{ if(d&&items[i]){ items[i].classList.add(cls); const chk=items[i].querySelector('.chk'); if(chk) chk.textContent='✓'; } }); };
+    applyList('todayList',s.today,'done');
+    applyList('contentList',s.content,'done');
+    applyList('moveList',s.move,'done');
+    applyList('aiList',s.ai,'done');
+    const shopItems=document.querySelectorAll('.shop-item');
+    (s.shop||[]).forEach((got,i)=>{ if(got&&shopItems[i]){ shopItems[i].classList.add('got'); const chk=shopItems[i].querySelector('.chk'); if(chk) chk.textContent='✓'; } });
+    if(s.energy) document.querySelectorAll('.energy-btn').forEach(b=>{ if(b.textContent.trim()===s.energy.trim()) b.classList.add('sel'); });
+  }catch(e){}
+  updateProg('contentList','contentBar','contentPct');
+  updateProg('aiList','aiBar','aiPct');
+}
+
+// INIT
+buildHabits(); buildWeekTabs(); buildCalendar(); loadAll(); loadGymLog();
+</script>
+</body>
+</html>
